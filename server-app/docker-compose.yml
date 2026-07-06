@@ -1,0 +1,10 @@
+services:
+  fashionshopdb:
+    image: postgres:17
+  api:
+    image: ${DOCKER_REGISTRY-}api
+    build:
+      context: .
+      dockerfile: Bootstrapper/Api/Dockerfile
+volumes:
+  postgres_fashionshopdb:
