@@ -1,0 +1,814 @@
+{
+  "info": {
+    "name": "FashionShop Catalog API",
+    "_postman_id": "fashionshop-catalog-v2",
+    "description": "Complete CRUD for the FashionShop Catalog module.\n\n**Base URL**\n- Docker:    `http://localhost:5005/api/v1`\n- Local dev: `http://localhost:5000/api/v1`\n\nSwagger UI: `{host}/swagger/index.html`\n\n---\n**Full demo flow (use _Guided Demo Flow folder)**\n1. GET Fashion ProductType → verify seed\n2. GET All Products → see seeded list\n3. GET Adidas (captures ETag)\n4. PUT with correct ETag → 200 OK\n5. PUT with same (now stale) ETag → 409 Conflict\n6. PATCH status → Inactive\n7. POST attribute upsert → update color\n8. CREATE new product\n9. UPLOAD image to new product\n10. DELETE new product → soft delete\n11. GET deleted product → 404",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",          "value": "http://localhost:5005/api/v1", "type": "string",
+      "description": "Docker port 5005. For local dotnet run use http://localhost:5000/api/v1" },
+    { "key": "categoryId",       "value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab", "type": "string", "description": "Shoes (seeded)" },
+    { "key": "brandId",          "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "type": "string", "description": "Nike (seeded)" },
+    { "key": "adidasBrandId",    "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbc", "type": "string", "description": "Adidas (seeded)" },
+    { "key": "productTypeId",    "value": "11111111-1111-1111-1111-111111111111", "type": "string", "description": "Fashion (seeded)" },
+    { "key": "colorAttrId",      "value": "cccccccc-cccc-cccc-cccc-000000000001", "type": "string", "description": "Color attr (seeded, Enum)" },
+    { "key": "sizeAttrId",       "value": "cccccccc-cccc-cccc-cccc-000000000002", "type": "string", "description": "Size attr (seeded, Enum)" },
+    { "key": "productId",        "value": "c67d6323-e8b1-4bdf-9a75-b0d0d2e7e914", "type": "string", "description": "Adidas Stan Smith (seeded)" },
+    { "key": "productEtag",      "value": "", "type": "string", "description": "Auto-captured from GET /products/:id ETag header" },
+    { "key": "newCategoryId",    "value": "", "type": "string" },
+    { "key": "newBrandId",       "value": "", "type": "string" },
+    { "key": "newAttrId",        "value": "", "type": "string" },
+    { "key": "newProductTypeId", "value": "", "type": "string" },
+    { "key": "newProductId",     "value": "", "type": "string" },
+    { "key": "newImageId",       "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/categories?pageIndex=0&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["categories"],
+              "query": [
+                { "key": "pageIndex", "value": "0" },
+                { "key": "pageSize",  "value": "10" },
+                { "key": "search",    "value": "", "disabled": true },
+                { "key": "parentId",  "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories","{{categoryId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('newCategoryId', pm.response.json().id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Accessories\",\n  \"slug\": \"accessories\",\n  \"parentId\": null\n}" },
+            "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Accessories Updated\",\n  \"slug\": \"accessories-updated\",\n  \"parentId\": null\n}" },
+            "url": { "raw": "{{baseUrl}}/categories/{{newCategoryId}}", "host": ["{{baseUrl}}"], "path": ["categories","{{newCategoryId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/categories/{{newCategoryId}}", "host": ["{{baseUrl}}"], "path": ["categories","{{newCategoryId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Category in-use → 422",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/categories/{{categoryId}}", "host": ["{{baseUrl}}"], "path": ["categories","{{categoryId}}"] },
+            "description": "Expects 422 BusinessRuleException with `payload.productsUsing`."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category – 404",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/categories/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["categories","00000000-0000-0000-0000-000000000000"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Brands",
+      "item": [
+        {
+          "name": "List Brands",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/brands?pageIndex=0&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["brands"],
+              "query": [
+                { "key": "pageIndex", "value": "0" },
+                { "key": "pageSize",  "value": "10" },
+                { "key": "search",    "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Brand by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/brands/{{brandId}}", "host": ["{{baseUrl}}"], "path": ["brands","{{brandId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Brand",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('newBrandId', pm.response.json().id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Puma\",\n  \"slug\": \"puma\"\n}" },
+            "url": { "raw": "{{baseUrl}}/brands", "host": ["{{baseUrl}}"], "path": ["brands"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Brand",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Puma Sports\",\n  \"slug\": \"puma-sports\"\n}" },
+            "url": { "raw": "{{baseUrl}}/brands/{{newBrandId}}", "host": ["{{baseUrl}}"], "path": ["brands","{{newBrandId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Brand",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/brands/{{newBrandId}}", "host": ["{{baseUrl}}"], "path": ["brands","{{newBrandId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Brand in-use → 422",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/brands/{{brandId}}", "host": ["{{baseUrl}}"], "path": ["brands","{{brandId}}"] },
+            "description": "Expects 422 with payload.productsUsing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attribute Definitions",
+      "item": [
+        {
+          "name": "List Attribute Definitions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/attribute-definitions?pageIndex=0&pageSize=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["attribute-definitions"],
+              "query": [
+                { "key": "pageIndex", "value": "0" },
+                { "key": "pageSize",  "value": "20" },
+                { "key": "search",    "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Attribute Definition by ID (Color)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/attribute-definitions/{{colorAttrId}}", "host": ["{{baseUrl}}"], "path": ["attribute-definitions","{{colorAttrId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Attribute Definition (Enum)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('newAttrId', pm.response.json().id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"style\",\n  \"label\": \"Style\",\n  \"dataType\": \"Enum\",\n  \"unit\": null,\n  \"allowedValues\": [\"Casual\", \"Sport\", \"Formal\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/attribute-definitions", "host": ["{{baseUrl}}"], "path": ["attribute-definitions"] },
+            "description": "dataType: String | Number | Boolean | Date | Enum"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Attribute Definition (Number)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"weight_g\",\n  \"label\": \"Weight\",\n  \"dataType\": \"Number\",\n  \"unit\": \"g\",\n  \"allowedValues\": null\n}" },
+            "url": { "raw": "{{baseUrl}}/attribute-definitions", "host": ["{{baseUrl}}"], "path": ["attribute-definitions"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Attribute Definition",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"Style Category\",\n  \"unit\": null,\n  \"allowedValues\": [\"Casual\", \"Sport\", \"Formal\", \"Outdoor\"]\n}" },
+            "url": { "raw": "{{baseUrl}}/attribute-definitions/{{newAttrId}}", "host": ["{{baseUrl}}"], "path": ["attribute-definitions","{{newAttrId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Attribute Definition",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/attribute-definitions/{{newAttrId}}", "host": ["{{baseUrl}}"], "path": ["attribute-definitions","{{newAttrId}}"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Product Types",
+      "item": [
+        {
+          "name": "List Product Types",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/product-types?pageIndex=0&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["product-types"],
+              "query": [
+                { "key": "pageIndex", "value": "0" },
+                { "key": "pageSize",  "value": "10" },
+                { "key": "search",    "value": "", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product Type by ID (with Attributes)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/product-types/{{productTypeId}}", "host": ["{{baseUrl}}"], "path": ["product-types","{{productTypeId}}"] },
+            "description": "Returns full attribute list with key, label, dataType, isRequired, displayOrder."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product Type",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('newProductTypeId', pm.response.json().id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"sportswear\",\n  \"name\": \"Sportswear\"\n}" },
+            "url": { "raw": "{{baseUrl}}/product-types", "host": ["{{baseUrl}}"], "path": ["product-types"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product Type",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sportswear & Activewear\"\n}" },
+            "url": { "raw": "{{baseUrl}}/product-types/{{newProductTypeId}}", "host": ["{{baseUrl}}"], "path": ["product-types","{{newProductTypeId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Attach Color Attribute (Required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"attributeDefinitionId\": \"{{colorAttrId}}\",\n  \"isRequired\": true,\n  \"displayOrder\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/product-types/{{newProductTypeId}}/attributes", "host": ["{{baseUrl}}"], "path": ["product-types","{{newProductTypeId}}","attributes"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Attach Size Attribute (Required)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"attributeDefinitionId\": \"{{sizeAttrId}}\",\n  \"isRequired\": true,\n  \"displayOrder\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/product-types/{{newProductTypeId}}/attributes", "host": ["{{baseUrl}}"], "path": ["product-types","{{newProductTypeId}}","attributes"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Detach Size from New ProductType",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/product-types/{{newProductTypeId}}/attributes/{{sizeAttrId}}", "host": ["{{baseUrl}}"], "path": ["product-types","{{newProductTypeId}}","attributes","{{sizeAttrId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product Type",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/product-types/{{newProductTypeId}}", "host": ["{{baseUrl}}"], "path": ["product-types","{{newProductTypeId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete ProductType in-use → 422",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/product-types/{{productTypeId}}", "host": ["{{baseUrl}}"], "path": ["product-types","{{productTypeId}}"] },
+            "description": "Expects 422 with payload.productsUsing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List Products (default — newest first)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?pageIndex=0&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "pageIndex",     "value": "0" },
+                { "key": "pageSize",      "value": "10" },
+                { "key": "search",        "value": "",  "disabled": true },
+                { "key": "categoryId",    "value": "",  "disabled": true },
+                { "key": "brandId",       "value": "",  "disabled": true },
+                { "key": "productTypeId", "value": "",  "disabled": true },
+                { "key": "status",        "value": "",  "disabled": true },
+                { "key": "minPrice",      "value": "",  "disabled": true },
+                { "key": "maxPrice",      "value": "",  "disabled": true },
+                { "key": "sort",          "value": "Newest", "disabled": true }
+              ]
+            },
+            "description": "sort values: Newest | NameAsc | NameDesc | PriceAsc | PriceDesc\nstatus values: Draft | Active | Inactive\npageSize capped at 100 server-side."
+          },
+          "response": []
+        },
+        {
+          "name": "List Products – PriceAsc + Range",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?sort=PriceAsc&minPrice=50&maxPrice=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "sort",     "value": "PriceAsc" },
+                { "key": "minPrice", "value": "50" },
+                { "key": "maxPrice", "value": "200" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Products – Search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?search=nike&sort=NameAsc",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "search", "value": "nike" },
+                { "key": "sort",   "value": "NameAsc" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Products – Filter by Brand",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?brandId={{brandId}}&sort=Newest",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "brandId", "value": "{{brandId}}" },
+                { "key": "sort",    "value": "Newest" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID (captures ETag)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 200) {",
+              "  var etag = pm.response.headers.get('ETag');",
+              "  if (etag) { pm.collectionVariables.set('productEtag', etag); console.log('ETag:', etag); }",
+              "  pm.collectionVariables.set('productId', pm.response.json().product.id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] },
+            "description": "Response includes:\n- ETag header → captured into {{productEtag}}\n- rowVersion (uint, same value as ETag)\n- createdAt, lastModifiedAt (ISO 8601)\n- attributes[].dataType (String|Number|Boolean|Date|Enum)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('newProductId', pm.response.json().id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"PUMA-RS-X-BLK-41\",\n  \"name\": \"Puma RS-X Black 41\",\n  \"slug\": \"puma-rs-x-black-41\",\n  \"description\": \"Puma RS-X retro-runner in black.\",\n  \"price\": 89.99,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{brandId}}\",\n  \"productTypeId\": \"{{productTypeId}}\",\n  \"status\": \"Draft\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"Black\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"41\" }\n  ],\n  \"images\": [\n    { \"url\": \"https://example.com/img/puma-rs-x.jpg\", \"alt\": \"Puma RS-X\", \"displayOrder\": 1, \"isPrimary\": true }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product – Error: missing required attrs (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"sku\": \"BAD-SKU-001\",\n  \"name\": \"Bad Product\",\n  \"slug\": \"bad-product\",\n  \"price\": 10.00,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{brandId}}\",\n  \"productTypeId\": \"{{productTypeId}}\",\n  \"status\": \"Draft\",\n  \"attributes\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] },
+            "description": "Expects 400: color is required; size is required."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product – Error: invalid enum value (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"sku\": \"BAD-SKU-002\",\n  \"name\": \"Bad Product 2\",\n  \"slug\": \"bad-product-2\",\n  \"price\": 10.00,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{brandId}}\",\n  \"productTypeId\": \"{{productTypeId}}\",\n  \"status\": \"Draft\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"Purple\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"42\" }\n  ]\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] },
+            "description": "Expects 400: 'Purple' not in allowed [Black, White, Red, Blue]."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product – Error: FluentValidation (400 with errors dict)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"sku\": \"\",\n  \"name\": \"\",\n  \"slug\": \"Invalid Slug!\",\n  \"price\": -5,\n  \"categoryId\": \"00000000-0000-0000-0000-000000000000\",\n  \"brandId\": \"00000000-0000-0000-0000-000000000000\",\n  \"productTypeId\": \"11111111-1111-1111-1111-111111111111\",\n  \"status\": \"Draft\",\n  \"attributes\": []\n}" },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] },
+            "description": "Expects 400 with errors.Sku, errors.Name, errors.Slug, errors.Price, etc."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product – correct ETag (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "If-Match", "value": "{{productEtag}}", "description": "Run GET first to capture ETag" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Adidas Stan Smith White 40 – Limited Ed.\",\n  \"slug\": \"adidas-stan-smith-white-40\",\n  \"description\": \"Limited edition Adidas Stan Smith.\",\n  \"price\": 119.00,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{adidasBrandId}}\",\n  \"status\": \"Active\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"White\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"40\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product – STALE ETag (409 Conflict)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "If-Match", "value": "\"1\"", "description": "Deliberately stale xmin" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Stale update\",\n  \"slug\": \"adidas-stan-smith-white-40\",\n  \"price\": 50.00,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{adidasBrandId}}\",\n  \"status\": \"Active\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"White\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"40\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] },
+            "description": "Expects 409 Conflict:\n{\n  \"title\": \"Concurrency conflict\",\n  \"status\": 409,\n  \"detail\": \"The resource was modified by another process. Reload and try again.\"\n}"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product – no ETag (bypasses concurrency)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Adidas Stan Smith White 40\",\n  \"slug\": \"adidas-stan-smith-white-40\",\n  \"price\": 99.00,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{adidasBrandId}}\",\n  \"status\": \"Active\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"White\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"40\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH Product Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"Inactive\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/status", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}","status"] },
+            "description": "Lightweight status change without full product payload.\nstatus: Draft | Active | Inactive"
+          },
+          "response": []
+        },
+        {
+          "name": "Upsert Product Attribute",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"attributeDefinitionId\": \"{{colorAttrId}}\",\n  \"value\": \"Black\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/attributes", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}","attributes"] },
+            "description": "Adds a new attribute or updates value if already exists.\nValue is validated against AttributeDefinition.DataType and AllowedValues."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Product Attribute",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/attributes/{{sizeAttrId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products","{{productId}}","attributes","{{sizeAttrId}}"]
+            },
+            "description": "Returns 400 if the attribute is required for the ProductType."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Product Image (multipart)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  var json = pm.response.json();",
+              "  pm.collectionVariables.set('newImageId', json.image.id);",
+              "  console.log('imageId:', json.image.id, 'url:', json.image.url);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file",         "type": "file",  "src": [], "description": "Select a jpg/png/webp ≤ 5 MB" },
+                { "key": "alt",          "type": "text",  "value": "Product photo" },
+                { "key": "displayOrder", "type": "text",  "value": "1" },
+                { "key": "isPrimary",    "type": "text",  "value": "true" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/products/{{newProductId}}/images", "host": ["{{baseUrl}}"], "path": ["products","{{newProductId}}","images"] },
+            "description": "Multipart upload. Saves to /uploads/products/{id}/.\nStored URL served as static file via UseStaticFiles.\nAccepted: image/jpeg, image/png, image/webp — max 5 MB."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product Image",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/products/{{newProductId}}/images/{{newImageId}}", "host": ["{{baseUrl}}"], "path": ["products","{{newProductId}}","images","{{newImageId}}"] },
+            "description": "Also deletes the physical file from disk. Run Upload first."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/products/{{newProductId}}", "host": ["{{baseUrl}}"], "path": ["products","{{newProductId}}"] },
+            "description": "Soft-delete. Following GET returns 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Deleted Product – 404",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/{{newProductId}}", "host": ["{{baseUrl}}"], "path": ["products","{{newProductId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product – 404 (non-existent)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/00000000-0000-0000-0000-000000000000", "host": ["{{baseUrl}}"], "path": ["products","00000000-0000-0000-0000-000000000000"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "_Guided Demo Flow",
+      "description": "Run in order — demonstrates full E2E flow against seeded data.",
+      "item": [
+        {
+          "name": "1. GET Fashion ProductType (verify seed)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/product-types/{{productTypeId}}", "host": ["{{baseUrl}}"], "path": ["product-types","{{productTypeId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "2. GET All Products",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          },
+          "response": []
+        },
+        {
+          "name": "3. GET Adidas (captures ETag)",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "var etag = pm.response.headers.get('ETag');",
+              "if (etag) { pm.collectionVariables.set('productEtag', etag); console.log('ETag:', etag); }"
+            ]}
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "4. PUT correct ETag → 200 OK",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "If-Match", "value": "{{productEtag}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Adidas Stan Smith White 40 (demo v2)\",\n  \"slug\": \"adidas-stan-smith-white-40\",\n  \"description\": \"Updated via demo flow.\",\n  \"price\": 105.00,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{adidasBrandId}}\",\n  \"status\": \"Active\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"White\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"40\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "5. PUT same ETag → 409 Conflict",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "If-Match", "value": "{{productEtag}}", "description": "Stale — xmin was bumped in step 4" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Conflict attempt\",\n  \"slug\": \"adidas-stan-smith-white-40\",\n  \"price\": 50.00,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{adidasBrandId}}\",\n  \"status\": \"Active\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"White\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"40\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "6. PATCH status → Inactive",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"Inactive\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/status", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}","status"] }
+          },
+          "response": []
+        },
+        {
+          "name": "7. Upsert attribute – change color to Red",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"attributeDefinitionId\": \"{{colorAttrId}}\",\n  \"value\": \"Red\"\n}" },
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/attributes", "host": ["{{baseUrl}}"], "path": ["products","{{productId}}","attributes"] }
+          },
+          "response": []
+        },
+        {
+          "name": "8. CREATE new product",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('newProductId', pm.response.json().id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"DEMO-FLOW-001\",\n  \"name\": \"Demo Product\",\n  \"slug\": \"demo-product-001\",\n  \"price\": 59.99,\n  \"categoryId\": \"{{categoryId}}\",\n  \"brandId\": \"{{brandId}}\",\n  \"productTypeId\": \"{{productTypeId}}\",\n  \"status\": \"Draft\",\n  \"attributes\": [\n    { \"attributeDefinitionId\": \"{{colorAttrId}}\", \"value\": \"Black\" },\n    { \"attributeDefinitionId\": \"{{sizeAttrId}}\",  \"value\": \"42\" }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] }
+          },
+          "response": []
+        },
+        {
+          "name": "9. UPLOAD image to new product",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.collectionVariables.set('newImageId', pm.response.json().image.id);",
+              "}"
+            ]}
+          }],
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file",         "type": "file", "src": [], "description": "Pick any image ≤5MB" },
+                { "key": "alt",          "type": "text", "value": "Demo image" },
+                { "key": "displayOrder", "type": "text", "value": "1" },
+                { "key": "isPrimary",    "type": "text", "value": "true" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/products/{{newProductId}}/images", "host": ["{{baseUrl}}"], "path": ["products","{{newProductId}}","images"] }
+          },
+          "response": []
+        },
+        {
+          "name": "10. DELETE new product (soft-delete)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/products/{{newProductId}}", "host": ["{{baseUrl}}"], "path": ["products","{{newProductId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "11. GET deleted product → 404",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/{{newProductId}}", "host": ["{{baseUrl}}"], "path": ["products","{{newProductId}}"] }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

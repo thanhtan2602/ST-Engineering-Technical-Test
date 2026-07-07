@@ -1,10 +1,26 @@
 services:
+
   fashionshopdb:
     image: postgres:17
+
+  cacheredis:
+    image: redis:7-alpine
+
   api:
-    image: ${DOCKER_REGISTRY-}api
+    image: api
+
     build:
       context: .
       dockerfile: Bootstrapper/Api/Dockerfile
+
+    depends_on:
+      - fashionshopdb
+      - cacheredis
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+    ports:
+      - "5005:8080"
 volumes:
   postgres_fashionshopdb:

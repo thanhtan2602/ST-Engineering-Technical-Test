@@ -1,17 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Catalog.Products.Dtos
 {
+    public record ProductAttributeInput(Guid AttributeDefinitionId, string Value);
+
+    public record ProductImageInput(string Url, string? Alt, int DisplayOrder, bool IsPrimary);
+
+    public record ProductAttributeValueDto(
+        Guid AttributeDefinitionId,
+        string Key,
+        string Label,
+        string Value,
+        string DataType);
+
+    public record ProductImageDto(
+        Guid Id,
+        string Url,
+        string? Alt,
+        int DisplayOrder,
+        bool IsPrimary);
+
     public record ProductDto(
         Guid Id,
+        string Sku,
         string Name,
-        List<string> Category,
-        string Description,
-        string ImageFile,
-        decimal Price
-    );
+        string Slug,
+        string? Description,
+        decimal Price,
+        string Status,
+        Guid CategoryId,
+        string CategoryName,
+        Guid BrandId,
+        string BrandName,
+        Guid ProductTypeId,
+        string ProductTypeName,
+        uint RowVersion,
+        DateTime? CreatedAt,
+        DateTime? LastModifiedAt,
+        List<ProductAttributeValueDto> Attributes,
+        List<ProductImageDto> Images);
+
+    public record ProductSummaryDto(
+        Guid Id,
+        string Sku,
+        string Name,
+        string Slug,
+        decimal Price,
+        string Status,
+        Guid CategoryId,
+        string CategoryName,
+        Guid BrandId,
+        string BrandName,
+        Guid ProductTypeId,
+        string ProductTypeName,
+        string? PrimaryImageUrl);
 }
