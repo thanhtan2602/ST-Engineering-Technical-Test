@@ -427,3 +427,28 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ─────────────────────────────────────────────────────────────
+# Project-specific ignores
+# ─────────────────────────────────────────────────────────────
+
+# AI-assisted development artefacts — not part of the deliverable
+.claude/
+.playwright-mcp/
+CLAUDE.md
+
+# Runtime uploads served by the API — not tracked in source control
+server-app/Bootstrapper/Api/wwwroot/uploads/
+
+# Local environment overrides (see server-app/.env.example and client-app/.env.example)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Frontend build output
+client-app/dist/
+client-app/node_modules/
+
+# TypeScript build info
+*.tsbuildinfo

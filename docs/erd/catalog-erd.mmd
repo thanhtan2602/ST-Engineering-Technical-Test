@@ -1,0 +1,94 @@
+erDiagram
+    CATEGORIES {
+        uuid Id PK
+        varchar Name
+        varchar Slug UK
+        uuid ParentId FK "self-ref"
+        timestamptz CreatedAt
+        varchar CreatedBy
+        timestamptz LastModifiedAt
+        varchar LastModifiedBy
+    }
+
+    BRANDS {
+        uuid Id PK
+        varchar Name
+        varchar Slug UK
+        timestamptz CreatedAt
+        varchar CreatedBy
+        timestamptz LastModifiedAt
+        varchar LastModifiedBy
+    }
+
+    PRODUCT_TYPES {
+        uuid Id PK
+        varchar Name
+        varchar Slug UK
+        timestamptz CreatedAt
+        varchar CreatedBy
+        timestamptz LastModifiedAt
+        varchar LastModifiedBy
+    }
+
+    ATTRIBUTE_DEFINITIONS {
+        uuid Id PK
+        varchar Code UK
+        varchar Name
+        varchar DataType "String|Number|Boolean|Date|Enum"
+        varchar Unit
+        text AllowedValues "JSON array for Enum"
+        timestamptz CreatedAt
+        varchar CreatedBy
+    }
+
+    PRODUCT_TYPE_ATTRIBUTES {
+        uuid ProductTypeId PK,FK
+        uuid AttributeDefinitionId PK,FK
+        boolean IsRequired
+    }
+
+    PRODUCTS {
+        uuid Id PK
+        varchar Sku UK "partial unique WHERE DeletedAt IS NULL"
+        varchar Name
+        varchar Slug UK "partial unique WHERE DeletedAt IS NULL"
+        varchar Description
+        numeric Price "decimal(18,2)"
+        varchar Status "Draft|Active|Inactive"
+        uuid CategoryId FK
+        uuid BrandId FK
+        uuid ProductTypeId FK
+        uint32 RowVersion "xmin"
+        timestamptz CreatedAt
+        varchar CreatedBy
+        timestamptz LastModifiedAt
+        varchar LastModifiedBy
+        timestamptz DeletedAt
+        varchar DeletedBy
+    }
+
+    PRODUCT_ATTRIBUTES {
+        uuid Id PK
+        uuid ProductId FK
+        uuid AttributeDefinitionId FK
+        text Value
+    }
+
+    PRODUCT_IMAGES {
+        uuid Id PK
+        uuid ProductId FK
+        varchar Url
+        varchar Alt
+        int DisplayOrder
+        boolean IsPrimary
+    }
+
+    CATEGORIES ||--o{ CATEGORIES : "ParentId"
+    CATEGORIES ||--o{ PRODUCTS : "CategoryId"
+    BRANDS ||--o{ PRODUCTS : "BrandId"
+    PRODUCT_TYPES ||--o{ PRODUCTS : "ProductTypeId"
+    PRODUCT_TYPES ||--o{ PRODUCT_TYPE_ATTRIBUTES : ""
+    ATTRIBUTE_DEFINITIONS ||--o{ PRODUCT_TYPE_ATTRIBUTES : ""
+    ATTRIBUTE_DEFINITIONS ||--o{ PRODUCT_ATTRIBUTES : ""
+    PRODUCTS ||--o{ PRODUCT_ATTRIBUTES : "cascade delete"
+    PRODUCTS ||--o{ PRODUCT_IMAGES : "cascade delete"

@@ -34,7 +34,15 @@ export function AttributeEditor({ typeAttributes }: AttributeEditorProps) {
   useEffect(() => {
     if (typeAttributes.length === 0) return;
 
-    const preserved = attributeValues.reduce<Record<string, string>>((acc, a) => {
+    const currentIds = new Set((attributeValues ?? []).map((a) => a.attributeDefinitionId));
+    const targetIds = typeAttributes.map((a) => a.attributeDefinitionId);
+    const inSync =
+      targetIds.length === currentIds.size &&
+      targetIds.every((id) => currentIds.has(id));
+
+    if (inSync) return;
+
+    const preserved = (attributeValues ?? []).reduce<Record<string, string>>((acc, a) => {
       acc[a.attributeDefinitionId] = a.value;
       return acc;
     }, {});

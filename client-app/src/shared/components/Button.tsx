@@ -35,9 +35,12 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, variant, size, asChild = false, ...props },
+  { className, variant, size, asChild = false, type, ...props },
   ref,
 ) {
   const Comp = asChild ? Slot : 'button';
-  return <Comp ref={ref} className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+  // Default to type="button" so buttons inside <form> do not accidentally submit.
+  // asChild uses Slot which forwards to any element; only set type on native <button>.
+  const finalType = asChild ? type : (type ?? 'button');
+  return <Comp ref={ref} type={finalType} className={cn(buttonVariants({ variant, size, className }))} {...props} />;
 });

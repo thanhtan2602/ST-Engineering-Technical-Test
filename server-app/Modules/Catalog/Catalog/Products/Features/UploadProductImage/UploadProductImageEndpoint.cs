@@ -17,9 +17,8 @@ namespace Catalog.Products.Features.UploadProductImage
             {
                 var alt = form["alt"].FirstOrDefault();
                 int.TryParse(form["displayOrder"].FirstOrDefault(), out var displayOrder);
-                bool.TryParse(form["isPrimary"].FirstOrDefault(), out var isPrimary);
 
-                var command = new UploadProductImageCommand(id, file, alt, displayOrder, isPrimary, env.WebRootPath);
+                var command = new UploadProductImageCommand(id, file, alt, displayOrder, env.WebRootPath);
                 var result = await sender.Send(command);
                 return Results.Created($"/api/v1/products/{id}", result.Adapt<UploadProductImageResponse>());
             })

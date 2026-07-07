@@ -30,14 +30,13 @@ export const toApiError = (error: unknown): ApiError => {
 
   if (response && isProblemDetails(response.data)) {
     const status = response.data.status ?? response.status ?? 500;
-    const type = response.data.type ?? '';
     return {
       status,
       title: response.data.title ?? defaultTitleForStatus(status),
       detail: response.data.detail,
       errors: response.data.errors ?? {},
       traceId: response.data.traceId,
-      isConcurrencyConflict: status === 409 && type.includes('concurrency'),
+      isConcurrencyConflict: status === 409,
       isValidation: status === 400,
       isNotFound: status === 404,
     };

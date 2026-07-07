@@ -44,14 +44,11 @@ export const useUpdateProductMutation = () => {
     },
     onError: (error) => {
       const apiError = toApiError(error);
-      if (apiError.isConcurrencyConflict) {
-        toast.error('Conflict', {
-          description:
-            'This product was changed by someone else. Reload to see the latest version.',
-        });
-      } else {
-        toast.error(apiError.title, { description: apiError.detail });
-      }
+      // Concurrency conflict is handled at the call site (dialog / modal),
+      // and validation errors are mapped to field-level messages.
+      // Only surface generic failures here.
+      if (apiError.isConcurrencyConflict || apiError.isValidation) return;
+      toast.error(apiError.title, { description: apiError.detail });
     },
   });
 };

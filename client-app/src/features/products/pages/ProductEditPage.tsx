@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { productFormSchema, type ProductFormValues } from '@/features/products/schemas';
 import { useProductQuery } from '@/features/products/api/useProductQuery';
 import { useUpdateProductMutation } from '@/features/products/api/useProductMutations';
+import { useCategoriesQuery } from '@/features/categories/api/categoryHooks';
+import { useBrandsQuery } from '@/features/brands/api/brandHooks';
+import { useProductTypeQuery } from '@/features/product-types/api/productTypeHooks';
 import { toApiError } from '@/shared/api/problemDetails';
 import type { ProductDetail } from '@/features/products/types';
 
@@ -34,34 +37,53 @@ const toFormValues = (product: ProductDetail): ProductFormValues => ({
 
 export function ProductEditPage() {
   const { id } = useParams<{ id: string }>();
+  const { data: product, isLoading: productLoading } = useProductQuery(id);
+  const { data: categories, isLoading: catLoading } = useCategoriesQuery();
+  const { data: brands, isLoading: brandLoading } = useBrandsQuery();
+  const { data: productType, isLoading: ptLoading } = useProductTypeQuery(product?.productType.id);
+
+  const isLoading =
+    productLoading || catLoading || brandLoading || (product ? ptLoading : false);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (!product || !categories || !brands || !productType) return null;
+
+  return <ProductEditForm product={product} />;
+}
+
+type ProductEditFormProps = {
+  product: ProductDetail;
+};
+
+function ProductEditForm({ product }: ProductEditFormProps) {
   const navigate = useNavigate();
   const updateMutation = useUpdateProductMutation();
   const [conflictDialogOpen, setConflictDialogOpen] = useState(false);
 
-  const { data: product, isLoading } = useProductQuery(id);
-
   const methods = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
     mode: 'onBlur',
+    defaultValues: toFormValues(product),
   });
 
   const {
     handleSubmit,
-    reset,
     setError,
-    formState: { isSubmitting, isDirty },
+    formState: { isSubmitting },
   } = methods;
 
-  useEffect(() => {
-    if (product) reset(toFormValues(product));
-  }, [product, reset]);
-
   const onSubmit = handleSubmit(async (values) => {
-    if (!id) return;
-
     updateMutation.mutate(
       {
-        id,
+        id: product.id,
         payload: {
           name: values.name,
           slug: values.slug,
@@ -75,7 +97,7 @@ export function ProductEditPage() {
       },
       {
         onSuccess: () => {
-          navigate(`/products/${id}`);
+          navigate(`/products/${product.id}`);
         },
         onError: (error) => {
           const apiError = toApiError(error);
@@ -94,17 +116,6 @@ export function ProductEditPage() {
     );
   });
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
-
-  if (!product) return null;
-
   return (
     <div>
       <PageHeader title={`Edit: ${product.name}`} />
@@ -113,7 +124,6 @@ export function ProductEditPage() {
         <form onSubmit={onSubmit}>
           <ProductForm isEdit />
 
-          {/* Image management */}
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Images</CardTitle>
@@ -127,13 +137,13 @@ export function ProductEditPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate(`/products/${id}`)}
+              onClick={() => navigate(`/products/${product.id}`)}
             >
-              Cancel
+              Back
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || updateMutation.isPending || !isDirty}
+              disabled={isSubmitting || updateMutation.isPending}
             >
               {updateMutation.isPending ? 'Saving…' : 'Save changes'}
             </Button>
@@ -141,7 +151,6 @@ export function ProductEditPage() {
         </form>
       </FormProvider>
 
-      {/* Concurrency conflict dialog */}
       <Dialog open={conflictDialogOpen} onOpenChange={setConflictDialogOpen}>
         <DialogContent>
           <DialogHeader>

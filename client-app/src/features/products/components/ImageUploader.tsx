@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useDropzone, type FileRejection } from 'react-dropzone';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Info } from 'lucide-react';
 import { Button } from '@/shared/components/Button';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import {
   useDeleteProductImageMutation,
   useUploadProductImageMutation,
@@ -30,6 +31,7 @@ type ImageUploaderProps = {
 
 export function ImageUploader({ productId, images }: ImageUploaderProps) {
   const [uploading, setUploading] = useState<UploadingFile[]>([]);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const uploadMutation = useUploadProductImageMutation();
   const deleteMutation = useDeleteProductImageMutation();
 
@@ -89,6 +91,14 @@ export function ImageUploader({ productId, images }: ImageUploaderProps) {
 
   return (
     <div className="space-y-4">
+      {/* Notice: image ops bypass the Save button */}
+      <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>
+          Image uploads and deletions are saved immediately and cannot be undone by leaving the page.
+        </span>
+      </div>
+
       {/* Existing images */}
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
@@ -105,11 +115,12 @@ export function ImageUploader({ productId, images }: ImageUploaderProps) {
                 </span>
               )}
               <Button
+                type="button"
                 size="icon"
                 variant="destructive"
                 className="absolute right-1 top-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                 disabled={deleteMutation.isPending}
-                onClick={() => deleteMutation.mutate({ productId, imageId: img.id })}
+                onClick={() => setPendingDeleteId(img.id)}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -164,6 +175,25 @@ export function ImageUploader({ productId, images }: ImageUploaderProps) {
           <p className="text-xs">JPG, PNG, WebP · max 5 MB · up to 5 images</p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title="Delete image?"
+        description="This image will be removed immediately and cannot be recovered by clicking Back."
+        confirmLabel="Delete"
+        variant="destructive"
+        loading={deleteMutation.isPending}
+        onOpenChange={(open) => {
+          if (!open) setPendingDeleteId(null);
+        }}
+        onConfirm={() => {
+          if (!pendingDeleteId) return;
+          deleteMutation.mutate(
+            { productId, imageId: pendingDeleteId },
+            { onSuccess: () => setPendingDeleteId(null) },
+          );
+        }}
+      />
     </div>
   );
 }

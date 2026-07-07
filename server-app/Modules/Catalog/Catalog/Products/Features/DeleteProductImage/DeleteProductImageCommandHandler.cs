@@ -1,4 +1,5 @@
 using Catalog.Data.Repositories;
+using Shared.Exceptions;
 
 namespace Catalog.Products.Features.DeleteProductImage
 {
@@ -18,25 +19,32 @@ namespace Catalog.Products.Features.DeleteProductImage
 
     public class DeleteProductImageCommandHandler(
         IProductRepository productRepository,
+        CatalogDbContext dbContext,
         IWebHostEnvironment env)
         : ICommandHandler<DeleteProductImageCommand, DeleteProductImageResult>
     {
         public async Task<DeleteProductImageResult> Handle(DeleteProductImageCommand command, CancellationToken cancellationToken)
         {
-            var product = await productRepository.GetProductForUpdateAsync(command.ProductId, cancellationToken)
-                ?? throw new ProductNotFoundException(command.ProductId);
+            // Load the image directly — avoids tracking the Product entity with xmin,
+            // which would otherwise generate a spurious UPDATE on the Products row.
+            var image = await dbContext.Set<ProductImage>()
+                .FirstOrDefaultAsync(i => i.ProductId == command.ProductId && i.Id == command.ImageId, cancellationToken);
 
-            var image = product.Images.FirstOrDefault(i => i.Id == command.ImageId)
-                ?? throw new Shared.Exceptions.NotFoundException("ProductImage", command.ImageId);
+            if (image is null)
+            {
+                // Distinguish between product-not-found and image-not-found.
+                if (!await dbContext.Products.AnyAsync(p => p.Id == command.ProductId, cancellationToken))
+                    throw new ProductNotFoundException(command.ProductId);
+                throw new NotFoundException("ProductImage", command.ImageId);
+            }
 
-            // Best-effort delete from disk; don't fail if file is gone.
             var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
             var physicalPath = Path.Combine(webRoot, image.Url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(physicalPath))
-                File.Delete(physicalPath);
+            if (System.IO.File.Exists(physicalPath))
+                System.IO.File.Delete(physicalPath);
 
-            product.RemoveImage(command.ImageId);
-            await productRepository.SaveChangesAsync(product.Id, cancellationToken);
+            dbContext.Set<ProductImage>().Remove(image);
+            await productRepository.SaveChangesAsync(command.ProductId, cancellationToken);
 
             return new DeleteProductImageResult(true);
         }
