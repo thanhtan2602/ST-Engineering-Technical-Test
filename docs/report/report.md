@@ -137,6 +137,29 @@ server-app/
 - Endpoints are `ICarterModule` implementations, auto-discovered by assembly.
 - Feature layout: `Products/Features/<UseCase>/{Endpoint,Handler}.cs` — one folder per HTTP endpoint.
 
+### 2.7 Schema-per-module boundary
+
+Isolation in a modular monolith works on two axes: **code** (`.csproj` references) and **data** (database schema). Catalog wires the second axis via `HasDefaultSchema("catalog")` in [CatalogDbContext.OnModelCreating](../../server-app/Modules/Catalog/Catalog/Data/CatalogDbContext.cs):
+
+```csharp
+protected override void OnModelCreating(ModelBuilder builder)
+{
+    builder.HasDefaultSchema("catalog");
+    builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+}
+```
+
+All eight Catalog tables live in schema `catalog` (`catalog.products`, `catalog.product_attributes`, …) — nothing in `public`. When `Basket` and `Ordering` are implemented, they will get their own schemas (`basket`, `ordering`) with their own migrations, DbContexts, and seeders.
+
+**Why this matters**:
+
+- **Table namespace conflicts disappear.** A hypothetical `orders` table in Basket does not collide with an `orders` table an operator adds ad-hoc to `public`.
+- **Grants can be scoped per module.** Read-only analytics users can be granted `USAGE, SELECT` on schema `catalog` alone without touching Basket data — cheaper than table-level GRANTs and impossible to forget when adding new tables.
+- **Migration surface stays clean.** Each `DbContext` owns a schema, so `dotnet ef migrations add` for one module cannot accidentally scaffold tables from another.
+- **Refactor to microservices later is cheaper.** If Basket is extracted, the schema move is `pg_dump --schema=basket … | psql <new-db>` rather than untangling shared tables in `public`.
+
+The trade-off is one extra qualifier in ad-hoc SQL (`catalog.products` instead of `products`) and one extra config line per module. Both are acceptable for the isolation guarantee.
+
 ---
 
 ## 3. Technology stack — components & justification

@@ -28,7 +28,7 @@ Runtime topology — internal design details in [§6](#6-design-details).
 | --- | --- |
 | **Backend** | .NET 8, ASP.NET Core Minimal APIs + Carter, MediatR (CQRS + pipeline behaviors), EF Core 8 + Npgsql, FluentValidation, Mapster, Scrutor, Swashbuckle, `IExceptionHandler` + RFC 7807 |
 | **Frontend** | Vite 5, React 18, TypeScript 5 (strict), React Router 6 (lazy), TanStack Query 5, Zustand, axios, react-hook-form + Zod, Tailwind + Radix UI, react-dropzone, sonner, @tanstack/react-table, pnpm + Node 20 |
-| **Database** | PostgreSQL 17 — `xmin` optimistic concurrency, partial unique indexes, global soft-delete filter, migrations + idempotent seed run on startup |
+| **Database** | PostgreSQL 17 — schema-per-module isolation (`catalog`), `xmin` optimistic concurrency, partial unique indexes, global soft-delete filter, migrations + idempotent seed run on startup |
 | **Infrastructure** | Docker Compose (Postgres + Redis + API), Redis 7 (in-memory fallback), local disk for image uploads |
 
 ---
