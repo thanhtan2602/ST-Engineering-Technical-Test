@@ -52,7 +52,7 @@ Then run the API from the host:
 dotnet run --project Bootstrapper/Api
 ```
 
-Swagger UI: http://localhost:5000/swagger (or https://localhost:5050/swagger)
+Swagger UI: http://localhost:5005/swagger (or https://localhost:5050/swagger)
 
 The default connection string in [Bootstrapper/Api/appsettings.json](Bootstrapper/Api/appsettings.json) already targets `localhost:5434`, so no config changes are needed.
 
@@ -74,8 +74,8 @@ Current seed dataset ([Modules/Catalog/Catalog/Data/Seed/InitialData.cs](Modules
 
 - 5 categories
 - 5 brands
-- 3 attribute definitions (Color, Size, Material)
-- 1 product type (Fashion)
+- 15 attribute definitions (Color, Size, Material, Gender, Season, Fit, Style, Pattern, Closure, Sole, Waterproof, Capacity, Strap Type, Dimensions, Weight)
+- 3 product types (Apparel, Footwear, Accessories) — each attaches a curated subset of the attributes above with `IsRequired` flags
 - 31 products with attributes + images
 
 ### Add a migration

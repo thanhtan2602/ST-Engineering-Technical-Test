@@ -2,16 +2,16 @@
   "info": {
     "name": "FashionShop Catalog API",
     "_postman_id": "fashionshop-catalog-v2",
-    "description": "Complete CRUD for the FashionShop Catalog module.\n\n**Base URL**\n- Docker:    `http://localhost:5005/api/v1`\n- Local dev: `http://localhost:5000/api/v1`\n\nSwagger UI: `{host}/swagger/index.html`\n\n---\n**Full demo flow (use _Guided Demo Flow folder)**\n1. GET Fashion ProductType → verify seed\n2. GET All Products → see seeded list\n3. GET Adidas (captures ETag)\n4. PUT with correct ETag → 200 OK\n5. PUT with same (now stale) ETag → 409 Conflict\n6. PATCH status → Inactive\n7. POST attribute upsert → update color\n8. CREATE new product\n9. UPLOAD image to new product\n10. DELETE new product → soft delete\n11. GET deleted product → 404",
+    "description": "Complete CRUD for the FashionShop Catalog module.\n\n**Base URL** — `http://localhost:5005/api/v1` for both Docker Compose and local `dotnet run` (Kestrel binds to 5005 in launchSettings.json).\n\nSwagger UI: `{host}/swagger/index.html`\n\n---\n**Full demo flow (use _Guided Demo Flow folder)**\n1. GET Footwear ProductType → verify seed\n2. GET All Products → see seeded list\n3. GET Adidas (captures ETag)\n4. PUT with correct ETag → 200 OK\n5. PUT with same (now stale) ETag → 409 Conflict\n6. PATCH status → Inactive\n7. POST attribute upsert → update color\n8. CREATE new product\n9. UPLOAD image to new product\n10. DELETE new product → soft delete\n11. GET deleted product → 404",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     { "key": "baseUrl",          "value": "http://localhost:5005/api/v1", "type": "string",
-      "description": "Docker port 5005. For local dotnet run use http://localhost:5000/api/v1" },
-    { "key": "categoryId",       "value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaab", "type": "string", "description": "Shoes (seeded)" },
-    { "key": "brandId",          "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", "type": "string", "description": "Nike (seeded)" },
-    { "key": "adidasBrandId",    "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbc", "type": "string", "description": "Adidas (seeded)" },
-    { "key": "productTypeId",    "value": "11111111-1111-1111-1111-111111111111", "type": "string", "description": "Fashion (seeded)" },
+      "description": "http://localhost:5005/api/v1 for both Docker Compose and local dotnet run (Kestrel binds to 5005 in launchSettings.json)." },
+    { "key": "categoryId",       "value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2", "type": "string", "description": "Shoes (seeded)" },
+    { "key": "brandId",          "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb1", "type": "string", "description": "Nike (seeded)" },
+    { "key": "adidasBrandId",    "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2", "type": "string", "description": "Adidas (seeded)" },
+    { "key": "productTypeId",    "value": "11111111-1111-1111-1111-000000000002", "type": "string", "description": "Footwear (seeded)" },
     { "key": "colorAttrId",      "value": "cccccccc-cccc-cccc-cccc-000000000001", "type": "string", "description": "Color attr (seeded, Enum)" },
     { "key": "sizeAttrId",       "value": "cccccccc-cccc-cccc-cccc-000000000002", "type": "string", "description": "Size attr (seeded, Enum)" },
     { "key": "productId",        "value": "c67d6323-e8b1-4bdf-9a75-b0d0d2e7e914", "type": "string", "description": "Adidas Stan Smith (seeded)" },
@@ -66,7 +66,7 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Accessories\",\n  \"slug\": \"accessories\",\n  \"parentId\": null\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Sale\",\n  \"slug\": \"sale\",\n  \"parentId\": null\n}" },
             "url": { "raw": "{{baseUrl}}/categories", "host": ["{{baseUrl}}"], "path": ["categories"] }
           },
           "response": []
@@ -149,7 +149,7 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Puma\",\n  \"slug\": \"puma\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Reebok\",\n  \"slug\": \"reebok\"\n}" },
             "url": { "raw": "{{baseUrl}}/brands", "host": ["{{baseUrl}}"], "path": ["brands"] }
           },
           "response": []
@@ -224,7 +224,7 @@
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"key\": \"style\",\n  \"label\": \"Style\",\n  \"dataType\": \"Enum\",\n  \"unit\": null,\n  \"allowedValues\": [\"Casual\", \"Sport\", \"Formal\"]\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"warranty_years\",\n  \"label\": \"Warranty (Years)\",\n  \"dataType\": \"Enum\",\n  \"unit\": null,\n  \"allowedValues\": [\"1\", \"2\", \"3\", \"5\"]\n}" },
             "url": { "raw": "{{baseUrl}}/attribute-definitions", "host": ["{{baseUrl}}"], "path": ["attribute-definitions"] },
             "description": "dataType: String | Number | Boolean | Date | Enum"
           },
@@ -245,7 +245,7 @@
           "request": {
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"label\": \"Style Category\",\n  \"unit\": null,\n  \"allowedValues\": [\"Casual\", \"Sport\", \"Formal\", \"Outdoor\"]\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"label\": \"Warranty (Years, extended)\",\n  \"unit\": null,\n  \"allowedValues\": [\"1\", \"2\", \"3\", \"5\", \"10\"]\n}" },
             "url": { "raw": "{{baseUrl}}/attribute-definitions/{{newAttrId}}", "host": ["{{baseUrl}}"], "path": ["attribute-definitions","{{newAttrId}}"] }
           },
           "response": []
@@ -664,7 +664,7 @@
       "description": "Run in order — demonstrates full E2E flow against seeded data.",
       "item": [
         {
-          "name": "1. GET Fashion ProductType (verify seed)",
+          "name": "1. GET Footwear ProductType (verify seed)",
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/product-types/{{productTypeId}}", "host": ["{{baseUrl}}"], "path": ["product-types","{{productTypeId}}"] }

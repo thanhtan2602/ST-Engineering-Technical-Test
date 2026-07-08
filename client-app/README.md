@@ -23,7 +23,7 @@ React 18 + TypeScript SPA for managing the Fashion Shop product catalog. Integra
 
 - Node 20 LTS
 - pnpm 9+ (`npm i -g pnpm`)
-- The backend API running on `http://localhost:5000` (see [server-app README](../server-app/README.md))
+- The backend API running on `http://localhost:5005` (see [server-app README](../server-app/README.md))
 
 ## Quick start
 
@@ -44,8 +44,8 @@ pnpm dev
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `VITE_API_BASE_URL` | `http://localhost:5000/api/v1` | Backend API base URL |
-| `VITE_UPLOADS_BASE_URL` | `http://localhost:5000` | Base URL for resolving uploaded image paths |
+| `VITE_API_BASE_URL` | `http://localhost:5005/api/v1` | Backend API base URL |
+| `VITE_UPLOADS_BASE_URL` | `http://localhost:5005` | Base URL for resolving uploaded image paths |
 | `VITE_APP_NAME` | `Fashion Shop Admin` | App title shown in top bar |
 
 ## Scripts

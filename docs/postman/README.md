@@ -16,7 +16,7 @@ Complete API collection for the Fashion Shop backend, with an included environme
 ## Base URL
 
 The environment defaults to `http://localhost:5005/api/v1` (Docker Compose host port).
-If you run the API with `dotnet run` outside Docker, change `baseUrl` to `http://localhost:5000/api/v1`.
+If you run the API with `dotnet run` outside Docker, the port is the same (`5005`) — `launchSettings.json` binds Kestrel to `http://localhost:5005` in both cases.
 
 ## Guided Demo Flow
 
