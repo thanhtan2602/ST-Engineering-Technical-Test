@@ -3,7 +3,6 @@ using Catalog.Data.Repositories;
 using Catalog.Data.Seed;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Shared.Data;
@@ -38,8 +37,6 @@ namespace Catalog
 
             // Data - Infrastructure services
             var connectionString = configuration.GetConnectionString("Database");
-
-            services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
 
             services.AddDbContext<CatalogDbContext>(options =>
             {

@@ -8,8 +8,8 @@ namespace Catalog.Data.Repositories
     {
         public async Task<ProductDto?> GetProductByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Tracked load so we can read xmin from the change tracker for ETag.
             var p = await dbContext.Products
+                .AsNoTracking()
                 .Include(x => x.Category)
                 .Include(x => x.Brand)
                 .Include(x => x.ProductType)
@@ -19,7 +19,10 @@ namespace Catalog.Data.Repositories
 
             if (p is null) return null;
 
-            var xmin = dbContext.Entry(p).Property<uint>("xmin").CurrentValue;
+            var xminRaw = await dbContext.Database
+                .SqlQuery<long>($"SELECT CAST(xmin AS bigint) FROM catalog.\"Products\" WHERE \"Id\" = {id}")
+                .FirstAsync(cancellationToken);
+            var xmin = (uint)xminRaw;
 
             return new ProductDto(
                 p.Id, p.Sku, p.Name, p.Slug, p.Description, p.Price, p.Status.ToString(),

@@ -116,10 +116,5 @@ namespace Catalog.Products.Models
             _images.Add(ProductImage.Create(imageId, Id, url, alt, displayOrder, isPrimary));
         }
 
-        public void RemoveImage(Guid imageId)
-        {
-            var img = _images.FirstOrDefault(x => x.Id == imageId);
-            if (img is not null) _images.Remove(img);
-        }
     }
 }
